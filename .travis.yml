@@ -1,0 +1,24 @@
+language: generic 
+sudo: required
+services:
+    - docker
+    
+before_install:
+    - docker build -t oabai/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true oabai/react-test npm test
+    
+after_success:
+    - docker build -t oabai/multi-client ./client
+    - docker build -t oabai/multi-nginx ./nginx
+    - docker build -t oabai/multi-server ./server
+    - docker build -t oabai/multi-worker ./worker
+    
+    # Log in to the docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+    # Take those images and push them to docker hub
+    - docker push oabai/multi-client
+    - docker push oabai/multi-nginx
+    - docker push oabai/multi-server
+    - docker push oabai/multi-worker
